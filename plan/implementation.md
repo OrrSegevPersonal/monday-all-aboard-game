@@ -47,7 +47,7 @@ flowchart TB
 | Pro | 5 | 2 | 12 coins |
 | Enterprise | 8 | 4 | 24 additional coins |
 
-Start with Auto-assign, zero coins, and two Primaries. Days 5–10 have three Primaries. A boss replaces one Primary on days 3, 6, and 9. Successful days award `3 + primaryCount + floor(dayScore / 40)` coins, then pay agent upkeep in slot order. An unpaid agent leaves. Overtime spends after upkeep and never spends on the final day. Tiers, enabled rules, ordering, sales, and department assignments can change only at port. Purchases beyond active automation capacity enter reserve. Sales return half cost rounded down. Rerolls cost 2 coins, then one more per reroll that shop.
+Start with Auto-assign, zero coins, and two Primaries. Days 5–10 have three Primaries. A Boss Task replaces one Primary on days 3, 6, and 9. Successful days award `3 + primaryCount + floor(dayScore / 40)` coins, then pay agent upkeep in slot order. An unpaid agent leaves. Overtime spends after upkeep and never spends on the final day. Tiers, enabled rules, ordering, sales, and department assignments can change only at port. Purchases beyond active automation capacity enter reserve. Sales return half cost rounded down. Rerolls cost 2 coins, then one more per reroll that shop.
 
 ## Automation roster
 

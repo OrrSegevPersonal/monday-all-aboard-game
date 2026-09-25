@@ -24,7 +24,7 @@ npm test
 - The starter Auto-assign moves arriving Primaries forward. Equip additional rules at port and watch their effects cascade.
 - Successful days pay 3 coins + 1 per Primary + 1 per 40 daily score. Buy Pro for 12 coins, then Enterprise for another 24.
 - Agents cost 5 coins to hire and 1 coin per successful day. Assign their department in the crew view while at port. Each acts once after every player action.
-- Complete ten days to win. Bosses arrive on days 3, 6, and 9. Use a numeric seed in New cruise to repeat a run’s content; identical decisions reproduce its randomness.
+- Complete ten days to win. Boss Tasks arrive on days 3, 6, and 9. Use a numeric seed in New cruise to repeat a run’s content; identical decisions reproduce its randomness.
 
 Runs save locally after each completed action, day transition, or shop change. Refresh resumes the last settled state, including the RNG position. The save is local to this browser and origin; no account or backend is required. Animation speed can be changed in the footer; system reduced-motion preferences are respected.
 
