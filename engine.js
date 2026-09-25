@@ -23,7 +23,7 @@ export const AGENTS = [
   {id:'quartermaster',name:'Quartermaster',perk:'First Recurring completion by this agent each day grants +1 coin.',portrait:3},
   {id:'signoff',name:'Sign-off Specialist',perk:'Once a day, this agent immediately approves a Primary it moves to Review.',portrait:4},
 ];
-export const BOSSES = {3:{name:'Exorcise the espresso machine',dept:'Galley',rule:'Possessed appliances: the boss arrives Stuck.'},6:{name:'Politely repel the pirates',dept:'Deck',rule:'Boarding party: the boss arrives Stuck.'},9:{name:'Audit the haunted engine',dept:'Engine Room',rule:'Ghost in the machine: the boss arrives Stuck.'}};
+export const BOSSES = {3:{name:'Exorcise the espresso machine',dept:'Galley',rule:'Possessed appliances: its review has a 55% chance of becoming Stuck.'},6:{name:'Politely repel the pirates',dept:'Deck',rule:'Boarding party: its review has a 55% chance of becoming Stuck.'},9:{name:'Audit the haunted engine',dept:'Engine Room',rule:'Ghost in the machine: its review has a 55% chance of becoming Stuck.'}};
 const NAMES = {
   Galley:['Feed the midnight passengers','Repair the buffet warmer','Prepare the captain’s dinner','Rescue the breakfast service'],
   Cabins:['Restore air conditioning','Deliver room-service dinner','Fix the very dramatic shower','Prepare the honeymoon suite'],
@@ -68,8 +68,9 @@ export class Game {
   canResolveStuck() { return this.s.coins>=3||this.s.actions>=2; }
   async advance(c,i,actor='player',clear=false) {
     if(!i||done(i)||c.halted)return;
-    if(i.stuck||this.s.pendingStuck)return;
-    if(clear)return;
+    if(this.s.pendingStuck)return;
+    if(clear&&i.stuck){i.stuck=false;i.status=1;c.moves++;c.queue.push({type:'move',item:i,actor,to:1,position:c.moves});await this.note(`${i.name} · blocker cleared`,actor,i.id);return;}
+    if(i.stuck)return;
     const preparedBoost=i.status===0?i.prepared||0:0;
     if(i.status===2&&this.canResolveStuck()&&random(this.s)<this.stuckRisk(i)) {
       i.stuck=true;this.s.pendingStuck=i.id;c.queue.push({type:'stuck',item:i,actor});
@@ -147,7 +148,7 @@ export class Game {
     try {this.s.actions--;const c=this.context();await this.advance(c,i);await this.drain(c);
       if(this.s.pendingStuck){await this.settle(c);return true;}
       for(const a of this.s.agents.slice(0,TIERS[this.s.tier].agents)){const target=agentTarget(this.s,a);if(target&&await this.fire(c,`agent-action-${a.id}`,target.id)){await this.advance(c,target,a.id);await this.drain(c);if(this.s.pendingStuck)break;}}
-      await this.settle(c);if(this.s.actions===0)await this.endDay();return true;
+      await this.settle(c);if(this.s.actions===0&&!this.s.pendingStuck)await this.endDay();return true;
     } finally {this.busy=false;}
   }
   async resolveStuck(method) {
@@ -161,7 +162,7 @@ export class Game {
     await this.drain(c);await this.settle(c);if(this.s.actions===0)await this.endDay();return true;
   }
   async endDay() {
-    if(this.s.phase!=='playing')return false;
+    if(this.s.phase!=='playing'||this.s.pendingStuck)return false;
     if(this.s.items.some(i=>i.lane==='primary'&&!done(i))){this.s.phase='lost';await this.note('Unfinished mandatory work. The captain requests an exit interview.');return true;}
     const reward=3+this.s.items.filter(i=>i.lane==='primary').length+Math.floor(this.s.dayScore/40);this.s.coins+=reward;
     await this.note(`Day survived · +${reward} coins`,null,null,'reward');

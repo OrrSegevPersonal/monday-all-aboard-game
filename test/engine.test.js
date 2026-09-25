@@ -6,7 +6,7 @@ function fixture(ids=[],items=[item()]){const s=createState(42);Object.assign(s,
 
 test('same seed and decisions reproduce days, shop and scores',async()=>{
   const a=new Game(createState(73)),b=new Game(createState(73));
-  for(const g of [a,b]){await g.startDay();while(g.s.phase==='playing'){const t=g.s.items.find(i=>i.lane==='primary'&&!done(i))||g.s.items.find(i=>!done(i));if(t)await g.act(t.id);else await g.endDay();}}
+  for(const g of [a,b]){await g.startDay();while(g.s.phase==='playing'){if(g.s.pendingStuck){await g.resolveStuck(g.s.coins>=3?'coins':'actions');continue;}const t=g.s.items.find(i=>i.lane==='primary'&&!done(i))||g.s.items.find(i=>!done(i));if(t)await g.act(t.id);else await g.endDay();}}
   assert.deepEqual(a.s,b.s);assert.equal(a.s.phase,'shop');
 });
 test('failure is mandatory completion, never score',async()=>{const g=fixture();g.s.dayScore=10000;await g.endDay();assert.equal(g.s.phase,'lost');const h=fixture([], [item({status:3})]);await h.endDay();assert.equal(h.s.phase,'shop');assert.equal(h.s.coins,4);});
@@ -34,7 +34,7 @@ test('100 seeded conservative cruises can reach Enterprise while buying an agent
   let wins=0,enterprise=0;
   for(let seed=1;seed<=100;seed++){const g=new Game(createState(seed));await g.startDay();while(g.s.phase!=='lost'&&g.s.phase!=='won'){
     if(g.s.phase==='shop'){if(g.s.tier==='basic'&&g.s.coins>=12)g.upgrade();if(g.s.tier==='pro'&&g.s.agents.length===0&&g.s.coins>=5)g.hire('coordinator',DEPTS[(g.s.day)%4]);if(g.s.tier==='pro'&&g.s.coins>=24)g.upgrade();if(g.s.agents.length)g.assign('coordinator',DEPTS[g.s.day%4]);await g.startDay();continue;}
-    const target=g.s.items.find(i=>i.lane==='primary'&&!done(i))||g.s.items.find(i=>i.lane==='secondary'&&!done(i))||g.s.items.find(i=>!done(i));if(target)await g.act(target.id);else await g.endDay();
+    if(g.s.pendingStuck){await g.resolveStuck(g.s.coins>=3?'coins':'actions');continue;}const target=g.s.items.find(i=>i.lane==='primary'&&!done(i))||g.s.items.find(i=>i.lane==='secondary'&&!done(i))||g.s.items.find(i=>!done(i));if(target)await g.act(target.id);else await g.endDay();
   }if(g.s.phase==='won')wins++;if(g.s.tier==='enterprise')enterprise++;}
   assert.ok(wins>=70,`Only ${wins}/100 wins for conservative policy`);assert.ok(enterprise>=50,`Only ${enterprise}/100 reached Enterprise`);
 });
