@@ -1,5 +1,11 @@
 # Tactical difficulty validation
 
+## Playtest follow-up: cheaper tiers
+
+Current prices are Pro **8** and Enterprise **16**, reduced from 12/24 following player feedback about purchasing upgrades too late. The tables below and `balance-results.json` are historical measurements using 12/24, not current win-rate claims. The simulation now derives its upgrade thresholds from the actual tier prices plus the 5-coin hiring reserve.
+
+A follow-up of 1,000 crew-policy cruises (seeds 200001–201000) at 8/16 produced 670 wins (67%). Pro purchases were primarily before day 4 (561 runs), then day 5 (305); Enterprise was purchased before day 8 in 18 runs, day 9 in 178, and day 10 in 351. This deliberately eases the purchase bottleneck; workload and disruptions were not increased to cancel out the price reduction. This small follow-up does not replace the earlier full validation.
+
 ## Final parameters
 
 New cruises use balance version 2. Workloads by day are **2, 2, 3, 3, 4, 5, 6, 7, 9, 10**. The requested initial curve produced roughly 55% tactical wins on tuning seeds, with insufficient late pressure. A steeper curve ending at 11 met the overall difficulty target but overemphasized Fast Track. Ending at 10 improves alternatives while keeping aggregate tactical wins below 40%.

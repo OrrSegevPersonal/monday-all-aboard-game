@@ -45,8 +45,8 @@ flowchart TB
 | Tier | Automations | Agents | Cost |
 |---|---:|---:|---:|
 | Basic | 2 | 0 | Free |
-| Pro | 5 | 2 | 12 coins |
-| Enterprise | 8 | 4 | 24 additional coins |
+| Pro | 5 | 2 | 8 coins |
+| Enterprise | 8 | 4 | 16 additional coins |
 
 Start with Auto-assign, zero coins, and two Primaries. New cruises use `balanceVersion: 2` and the tuned workload `2, 2, 3, 3, 4, 5, 6, 7, 9, 10` for days 1–10. Existing saved cruises without this balance version retain the old two/three-Primary curve and shop behavior. A Boss Task replaces one Primary on days 3, 6, and 9. Successful days award `3 + primaryCount + floor(dayScore / 40)` coins, then pay agent upkeep in slot order. An unpaid agent leaves. Overtime spends after upkeep and never spends on the final day. Tiers, enabled rules, ordering, sales, and department assignments can change only at port. Purchases beyond active automation capacity enter reserve. Sales return half cost rounded down. Rerolls cost 2 coins, then one more per reroll that shop.
 
@@ -62,7 +62,7 @@ Days 1–3 have none; days 4–6 have one after player turn 2; days 7–10 have 
 
 A player turn includes all cascades, agents, and any required Stuck resolution. The engine persists its remaining agent slot and cascade context across an incident, then resolves scheduled events once before automatic day-end evaluation. Incident payments and action refunds do not advance the turn clock. Ending a successful day early avoids later events.
 
-The final curve and simulation evidence are recorded in `balance-validation.md`. Six base actions, tier prices, agent costs/upkeep, and payout formulas were retained.
+The curve and simulation evidence are recorded in `balance-validation.md`. After playtesting, Pro was reduced from 12 to 8 coins and Enterprise from 24 to 16 coins, including future purchases in existing saves. Six base actions, agent costs/upkeep, and payout formulas remain unchanged. Earlier simulation results describe the original prices.
 
 ## Automation roster
 

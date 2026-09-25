@@ -13,8 +13,8 @@ function shop(g){
   const pref=(mode==='rules'?['standup','overtime','fast','cross','alert','bonus']:['fast','standup','overtime','alert','cross','bonus']).filter(id=>id!==exclude);
   // Buy useful throughput early, then unlock staffed departments.
   if(s.tier==='basic'&&s.automations.length===1){const id=pref.find(id=>s.offers.includes(id));if(id)g.buy(id);}
-  if(s.tier==='basic'&&s.coins>=17)g.upgrade();
-  if(s.tier==='pro'&&s.agents.length===2&&s.coins>=29)g.upgrade();
+  if(s.tier==='basic'&&s.coins>=TIERS.pro.cost+5)g.upgrade();
+  if(s.tier==='pro'&&s.agents.length===2&&s.coins>=TIERS.enterprise.cost+5)g.upgrade();
   const hires=mode==='rules'?['signoff','escalation','liaison','coordinator']:['escalation','signoff','coordinator','liaison'];
   for(const id of hires)if(s.agents.length<TIERS[s.tier].agents&&s.coins>=5&&!s.agents.some(a=>a.id===id))g.hire(id);
   if(s.tier!=='basic')for(const id of pref)if(activeRules(s).length<TIERS[s.tier].automations&&s.offers.includes(id)&&s.coins>=8)g.buy(id);

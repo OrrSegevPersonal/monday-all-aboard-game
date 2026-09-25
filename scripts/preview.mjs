@@ -15,6 +15,8 @@ const server=http.createServer(async(req,res)=>{
       const galley=s.items.find(i=>i.dept==='Galley');galley.status=1;
       s.items.filter(i=>i.dept==='Galley'&&i.lane!=='primary').forEach(i=>i.status=1);
       if(url.searchParams.get('scenario')==='port'){s.items.forEach(i=>i.status=3);await g.endDay();}
+      if(url.searchParams.get('scenario')==='stuck'){s.items[0].status=2;s.items[0].stuckRisk=1;}
+      if(url.searchParams.get('scenario')==='lost')await g.endDay();
       const html=await readFile(resolve(root,'index.html'),'utf8');
       const init=`<script>localStorage.setItem('all-a-board-v1',${JSON.stringify(JSON.stringify(s))});localStorage.setItem('aab-speed','1');</script>`;
       res.writeHead(200,{'Content-Type':'text/html'});res.end(html.replace('<script type="module"',init+'<script type="module"'));return;

@@ -9,7 +9,7 @@ export function forecast(s,day,primaries) {
   const pool=['allhands','briefing',...(departments.includes('Galley')?['inspection']:[])];
   return Array.from({length:day<7?1:2},(_,n)=>{const type=pool.splice(Math.floor(random(rng)*pool.length),1)[0];return {id:`event-${day}-${n}`,type,afterTurn:2+n*2,resolved:false,...(type==='briefing'?{dept:departments[Math.floor(random(rng)*departments.length)]}:{})};});
 }
-export const TIERS = { basic: {automations:2,agents:0,cost:0}, pro: {automations:5,agents:2,cost:12}, enterprise: {automations:8,agents:4,cost:24} };
+export const TIERS = { basic: {automations:2,agents:0,cost:0}, pro: {automations:5,agents:2,cost:8}, enterprise: {automations:8,agents:4,cost:16} };
 export const RULES = [
   ['bonus','Done → Bonus','When any task is completed → gain 5 score.','Common',3],
   ['assign','Auto-assign','When a Primary arrives → advance it one step.','Common',3],
