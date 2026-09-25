@@ -1,0 +1,236 @@
+{
+  "seeds": "200001–210000",
+  "tuningSeeds": "1–1000",
+  "reports": [
+    {
+      "mode": "manual",
+      "count": 10000,
+      "offset": 200001,
+      "exclude": "",
+      "wins": 0,
+      "failures": {
+        "1": 1466,
+        "3": 8534
+      },
+      "upgrades": {},
+      "purchases": {},
+      "winningBuilds": {},
+      "winRate": 0
+    },
+    {
+      "mode": "starter",
+      "count": 10000,
+      "offset": 200001,
+      "exclude": "",
+      "wins": 0,
+      "failures": {
+        "4": 6644,
+        "5": 3356
+      },
+      "upgrades": {},
+      "purchases": {},
+      "winningBuilds": {},
+      "winRate": 0
+    },
+    {
+      "mode": "fixed",
+      "count": 10000,
+      "offset": 200001,
+      "exclude": "",
+      "wins": 0,
+      "failures": {
+        "3": 511,
+        "4": 4943,
+        "5": 3686,
+        "6": 752,
+        "7": 101,
+        "8": 5,
+        "9": 2
+      },
+      "upgrades": {
+        "pro:day5": 1648,
+        "pro:day4": 2459,
+        "pro:day3": 490,
+        "pro:day6": 244,
+        "enterprise:day9": 1
+      },
+      "purchases": {
+        "alert": 3379,
+        "standup": 3348,
+        "room": 3414,
+        "momentum": 1800,
+        "galley": 3489,
+        "fast": 3482,
+        "overtime": 1746,
+        "bonus": 3469,
+        "clear": 1722,
+        "vip": 1786,
+        "cross": 492,
+        "touch": 473,
+        "chain": 493
+      },
+      "winningBuilds": {},
+      "winRate": 0
+    },
+    {
+      "mode": "crew",
+      "count": 10000,
+      "offset": 200001,
+      "exclude": "",
+      "wins": 4019,
+      "failures": {
+        "3": 9,
+        "4": 1285,
+        "5": 3096,
+        "6": 245,
+        "7": 112,
+        "8": 263,
+        "9": 601,
+        "10": 370
+      },
+      "upgrades": {
+        "pro:day5": 4211,
+        "pro:day4": 1905,
+        "pro:day6": 568,
+        "enterprise:day10": 1096,
+        "enterprise:day9": 29
+      },
+      "purchases": {
+        "fast": 6954,
+        "standup": 6333,
+        "cross": 3664,
+        "overtime": 5683,
+        "alert": 2396,
+        "bonus": 822
+      },
+      "winningBuilds": {
+        "alert+assign+fast+overtime+standup": 1018,
+        "assign+cross+fast+overtime+standup": 1899,
+        "alert+assign+cross+fast+standup": 384,
+        "alert+assign+cross+fast+overtime": 142,
+        "assign+bonus+fast+overtime+standup": 312,
+        "alert+assign+bonus+fast+standup": 40,
+        "assign+bonus+cross+fast+standup": 60,
+        "alert+assign+cross+overtime+standup": 78,
+        "assign+bonus+cross+overtime+standup": 7,
+        "assign+bonus+cross+fast+overtime": 19,
+        "alert+assign+bonus+overtime+standup": 13,
+        "alert+assign+bonus+fast+overtime+standup": 15,
+        "alert+assign+cross+fast+overtime+standup": 6,
+        "alert+assign+bonus+fast+overtime": 11,
+        "alert+assign+bonus+cross+fast+standup": 7,
+        "assign+bonus+cross+fast+overtime+standup": 3,
+        "alert+assign+bonus+cross+fast": 3,
+        "assign+fast+overtime+standup": 2
+      },
+      "winRate": 0.4019
+    },
+    {
+      "mode": "rules",
+      "count": 10000,
+      "offset": 200001,
+      "exclude": "",
+      "wins": 3653,
+      "failures": {
+        "3": 17,
+        "4": 997,
+        "5": 3236,
+        "6": 456,
+        "7": 143,
+        "8": 180,
+        "9": 835,
+        "10": 483
+      },
+      "upgrades": {
+        "pro:day5": 4231,
+        "pro:day4": 1807,
+        "pro:day6": 688,
+        "enterprise:day10": 848,
+        "enterprise:day9": 21
+      },
+      "purchases": {
+        "fast": 6392,
+        "standup": 6731,
+        "cross": 4339,
+        "overtime": 6334,
+        "alert": 982,
+        "bonus": 843
+      },
+      "winningBuilds": {
+        "assign+cross+fast+overtime+standup": 2471,
+        "alert+assign+cross+overtime+standup": 36,
+        "alert+assign+fast+overtime+standup": 467,
+        "alert+assign+cross+fast+overtime": 51,
+        "assign+bonus+cross+overtime+standup": 10,
+        "assign+bonus+fast+overtime+standup": 294,
+        "assign+bonus+cross+fast+standup": 81,
+        "alert+assign+cross+fast+standup": 184,
+        "assign+bonus+cross+fast+overtime": 24,
+        "assign+bonus+cross+fast+overtime+standup": 10,
+        "alert+assign+bonus+fast+standup": 9,
+        "alert+assign+bonus+cross+fast+standup": 3,
+        "alert+assign+cross+fast+overtime+standup": 5,
+        "alert+assign+bonus+fast+overtime": 2,
+        "alert+assign+bonus+fast+overtime+standup": 2,
+        "alert+assign+bonus+overtime+standup": 1,
+        "assign+fast+overtime+standup": 3
+      },
+      "winRate": 0.3653
+    },
+    {
+      "mode": "crew",
+      "count": 10000,
+      "offset": 200001,
+      "exclude": "fast",
+      "wins": 1451,
+      "failures": {
+        "3": 21,
+        "4": 1496,
+        "5": 3429,
+        "6": 307,
+        "7": 146,
+        "8": 880,
+        "9": 1839,
+        "10": 431
+      },
+      "upgrades": {
+        "pro:day5": 3726,
+        "pro:day4": 1758,
+        "pro:day6": 694,
+        "enterprise:day8": 6,
+        "enterprise:day10": 410,
+        "enterprise:day9": 154
+      },
+      "purchases": {
+        "alert": 4026,
+        "standup": 6227,
+        "cross": 3075,
+        "bonus": 3000,
+        "overtime": 5232
+      },
+      "winningBuilds": {
+        "assign+bonus+cross+overtime+standup": 142,
+        "assign+bonus+standup": 1,
+        "alert+assign+cross+overtime+standup": 722,
+        "alert+assign+bonus+overtime+standup": 341,
+        "alert+assign+bonus+cross+standup": 28,
+        "assign+cross+overtime+standup": 39,
+        "alert+assign+cross+standup": 3,
+        "alert+assign+bonus+cross+overtime": 40,
+        "alert+assign+bonus+overtime": 7,
+        "alert+assign+overtime+standup": 78,
+        "alert+assign+cross+overtime": 14,
+        "assign+bonus+overtime+standup": 12,
+        "assign+overtime+standup": 8,
+        "alert+assign+standup": 2,
+        "alert+assign+bonus+standup": 5,
+        "alert+assign+overtime": 2,
+        "assign+cross+overtime": 1,
+        "alert+assign+bonus+cross+overtime+standup": 2,
+        "assign+bonus+cross+overtime": 2,
+        "assign+overtime": 2
+      },
+      "winRate": 0.1451
+    }
+  ]
+}
