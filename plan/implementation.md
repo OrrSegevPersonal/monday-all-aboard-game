@@ -4,7 +4,9 @@ This document supersedes conflicting mechanics in the original brainstorming spe
 
 ## Workday loop
 
-Primary orders are required today; all must reach Done. Secondary tasks prepare a named Primary for tomorrow, removing one status step. Preparing a blocked boss clears its initial blocker and starts it at Working; Auto-assign can then advance it again. Recurring orders are optional score work. Six actions per day, a ten-day run, and score rather than survival targets fund the shop.
+Every work order begins Pending and follows Pending → Working on it → In review → Done. Primary orders are required today; all must reach Done. Secondary tasks use the same track and, when completed, prepare a named Primary for tomorrow by removing one step from its first advance. Recurring orders are optional score work. Six actions per day, a ten-day run, and score rather than survival targets fund the shop.
+
+An order may become Stuck while moving out of In review. This pauses the board with a department-themed micro-scenario. The player must resolve it by paying 3 coins for outside help or spending 2 actions for an in-house response; either route completes the task. Bosses have a higher Stuck chance at review.
 
 ```mermaid
 flowchart TB
@@ -24,7 +26,7 @@ flowchart TB
     L --> A
   end
   subgraph Auxiliary[Auxiliary loops]
-    M[Complete Secondary] --> N[Pre-complete a linked step tomorrow]
+    M[Complete Secondary] --> N[Save a linked step tomorrow]
     N --> A
     O[Earn daily score] --> P[Bonus coins]
     P --> L
@@ -32,7 +34,7 @@ flowchart TB
     Q --> D
     L --> R[Upgrade Basic → Pro → Enterprise]
     R --> Q
-    S[Days 3, 6, 9] --> T[Mandatory comedy-horror order arrives Stuck]
+    S[Days 3, 6, 9] --> T[Mandatory comedy-horror order has a higher Stuck risk in review]
     T --> B
   end
 ```
@@ -66,7 +68,7 @@ Start with Auto-assign, zero coins, and two Primaries. Days 5–10 have three Pr
 | Crossover | Deck Primary/Recurring completion advances a chosen Galley Primary/Recurring order. | Rare / 8 |
 | Touch Base | Entering Review sends an order back to Working and grants 10 score, three times/action. | Rare / 8 |
 
-Completion multipliers include completion bonuses from rules and agents, multiply together, and precede Chain Reaction. Cascade totals round to integer score once, after multipliers. Secondary completion is atomic and does not generate a status-advance event. Clear Stuck returns a status-bearing order to Working and emits an advance event. Every automation may fire at most five times per cascade (Touch Base three); the global budget is 50 effects. Morning events form a separate cascade. Agent turns do not recursively schedule more agent turns.
+Completion multipliers include completion bonuses from rules and agents, multiply together, and precede Chain Reaction. Cascade totals round to integer score once, after multipliers. Secondary completion generates its normal final status-advance event, then records its linked preparation. Clear Stuck returns a status-bearing order to Working and emits an advance event. Every automation may fire at most five times per cascade (Touch Base three); the global budget is 50 effects. Morning events form a separate cascade. Agent turns do not recursively schedule more agent turns.
 
 ## Agent roster
 
@@ -90,4 +92,4 @@ Effects highlight their source and target row and animate a connecting line. The
 
 ## Verification
 
-Engine tests cover seeded replay, survival, preparation links, tier limits, reserve rules, agent priorities, event attribution, chained multipliers, choice targets, effect limits, upkeep, Overtime and ten-day victory. A 100-seed simulation exercises conservative full cruises and attainable Enterprise purchases. Browser checks exercise the board, shop, automation controls, agent portraits/assignments, saved runs and responsive breakpoints.
+Engine tests cover seeded replay, survival, shared status progression, Stuck resolution routes, preparation links, tier limits, reserve rules, agent priorities, event attribution, chained multipliers, choice targets, effect limits, upkeep, Overtime and ten-day victory. A 100-seed simulation exercises conservative full cruises and attainable Enterprise purchases. Browser checks exercise the board, scenario popup, shop, automation controls, agent portraits/assignments, saved runs and responsive breakpoints.
