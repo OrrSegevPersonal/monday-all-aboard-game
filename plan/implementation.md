@@ -15,7 +15,8 @@ flowchart TB
     B --> C[Spend one player action]
     C --> D[Resolve automation events in slot order]
     D --> E[Each agent acts; resolve its cascade before the next agent]
-    E --> F{Actions remaining?}
+    E --> U[Resolve scheduled disruptions once per player turn]
+    U --> F{Actions remaining?}
     F -- Yes --> C
     F -- No --> G{All Primaries Done?}
     G -- No --> H[Run ends]
@@ -47,7 +48,21 @@ flowchart TB
 | Pro | 5 | 2 | 12 coins |
 | Enterprise | 8 | 4 | 24 additional coins |
 
-Start with Auto-assign, zero coins, and two Primaries. Days 5–10 have three Primaries. A Boss Task replaces one Primary on days 3, 6, and 9. Successful days award `3 + primaryCount + floor(dayScore / 40)` coins, then pay agent upkeep in slot order. An unpaid agent leaves. Overtime spends after upkeep and never spends on the final day. Tiers, enabled rules, ordering, sales, and department assignments can change only at port. Purchases beyond active automation capacity enter reserve. Sales return half cost rounded down. Rerolls cost 2 coins, then one more per reroll that shop.
+Start with Auto-assign, zero coins, and two Primaries. New cruises use `balanceVersion: 2` and the tuned workload `2, 2, 3, 3, 4, 5, 6, 7, 9, 10` for days 1–10. Existing saved cruises without this balance version retain the old two/three-Primary curve and shop behavior. A Boss Task replaces one Primary on days 3, 6, and 9. Successful days award `3 + primaryCount + floor(dayScore / 40)` coins, then pay agent upkeep in slot order. An unpaid agent leaves. Overtime spends after upkeep and never spends on the final day. Tiers, enabled rules, ordering, sales, and department assignments can change only at port. Purchases beyond active automation capacity enter reserve. Sales return half cost rounded down. Rerolls cost 2 coins, then one more per reroll that shop.
+
+New shops guarantee an unowned Daily Standup, Fast Track, Overtime, or Crossover among their three offers while any remain. The existing five-fires-per-cascade limit still applies to Auto-assign: on crowded mornings it advances the first five arriving Primaries. Its total morning contribution is displayed explicitly.
+
+## Forecast disruptions
+
+Days 1–3 have none; days 4–6 have one after player turn 2; days 7–10 have two distinct events after turns 2 and 4. Event selection uses a separate seed derived from the cruise seed and day. Port forecasts show tomorrow’s exact mandatory workload, departments, Boss Task, and scheduled disruptions before shopping or assigning crew. The board repeats the schedule with countdowns.
+
+- Mandatory all-hands removes one remaining action, clamped to zero, without activating agents.
+- Health inspection resets unfinished Galley work in every lane to Pending. Done work stays Done. Resets grant no effects, rewards, or preparation credit; consumed preparation steps cannot be reused.
+- Department briefing causes each matching assigned agent to skip its next scheduled turn. Passive perks remain active. Skips expire at the next day.
+
+A player turn includes all cascades, agents, and any required Stuck resolution. The engine persists its remaining agent slot and cascade context across an incident, then resolves scheduled events once before automatic day-end evaluation. Incident payments and action refunds do not advance the turn clock. Ending a successful day early avoids later events.
+
+The final curve and simulation evidence are recorded in `balance-validation.md`. Six base actions, tier prices, agent costs/upkeep, and payout formulas were retained.
 
 ## Automation roster
 

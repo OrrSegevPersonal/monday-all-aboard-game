@@ -1,4 +1,14 @@
 export const DEPTS = ['Galley', 'Cabins', 'Engine Room', 'Deck'];
+export const WORKLOAD = [2,2,3,3,4,5,6,7,9,10];
+export const THROUGHPUT = ['standup','fast','overtime','cross'];
+export const DISRUPTIONS = {allhands:'Mandatory all-hands',inspection:'Health inspection',briefing:'Department briefing'};
+export function forecast(s,day,primaries) {
+  if(s.balanceVersion!==2||day<4||day>10)return [];
+  const rng={rng:(s.seed^Math.imul(day,0x9e3779b9))>>>0};
+  const departments=[...new Set([...primaries.map(i=>i.dept),...DEPTS.slice((day-1)%2,(day-1)%2+2),...Array.from({length:WORKLOAD[day]||0},(_,n)=>DEPTS[(day+n)%4])])];
+  const pool=['allhands','briefing',...(departments.includes('Galley')?['inspection']:[])];
+  return Array.from({length:day<7?1:2},(_,n)=>{const type=pool.splice(Math.floor(random(rng)*pool.length),1)[0];return {id:`event-${day}-${n}`,type,afterTurn:2+n*2,resolved:false,...(type==='briefing'?{dept:departments[Math.floor(random(rng)*departments.length)]}:{})};});
+}
 export const TIERS = { basic: {automations:2,agents:0,cost:0}, pro: {automations:5,agents:2,cost:12}, enterprise: {automations:8,agents:4,cost:24} };
 export const RULES = [
   ['bonus','Done → Bonus','When any task is completed → gain 5 score.','Common',3],
@@ -33,7 +43,7 @@ const NAMES = {
 const PREPS = {Galley:'Prep the ingredients',Cabins:'Stock the service trolley','Engine Room':'Stage the spare parts',Deck:'Check the lights and sound'};
 const RECURRING = {Galley:'Polish the suspicious spoons',Cabins:'Refold the towel swans','Engine Room':'Label the mystery switches',Deck:'Mediate deck-chair diplomacy'};
 export function createState(seed=Date.now()) {
-  return {version:2,seed:Number(seed)>>>0,rng:Number(seed)>>>0,day:0,phase:'new',tier:'basic',coins:0,actions:0,dayScore:0,totalScore:0,nextActions:0,items:[],tomorrow:[],automations:[{id:'assign',enabled:true}],agents:[],daily:{},log:[],offers:[],rerolls:0,serial:0,pendingStuck:null};
+  return {version:2,balanceVersion:2,events:[],tomorrowEvents:[],playerTurns:0,briefingSkips:[],turn:null,seed:Number(seed)>>>0,rng:Number(seed)>>>0,day:0,phase:'new',tier:'basic',coins:0,actions:0,dayScore:0,totalScore:0,nextActions:0,items:[],tomorrow:[],automations:[{id:'assign',enabled:true}],agents:[],daily:{},log:[],offers:[],rerolls:0,serial:0,pendingStuck:null};
 }
 export function random(s) { s.rng=(s.rng+0x6D2B79F5)>>>0; let t=s.rng; t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296; }
 export const done = i => i.status===3;
@@ -43,7 +53,7 @@ export function agentTarget(s,a) {
   return s.items.filter(i=>i.dept===a.dept&&!done(i)).sort((x,y)=>['primary','secondary','recurring'].indexOf(x.lane)-['primary','secondary','recurring'].indexOf(y.lane)||y.status-x.status||s.items.indexOf(x)-s.items.indexOf(y))[0];
 }
 function generate(s,day) {
-  const count=day<5?2:3, boss=BOSSES[day], result=[];
+  const count=s.balanceVersion===2?WORKLOAD[day-1]:day<5?2:3, boss=BOSSES[day], result=[];
   for(let n=0;n<count;n++) {
     const dept=DEPTS[(day+n-1)%4];
     result.push({id:`task-${++s.serial}`,name:NAMES[dept][Math.floor(random(s)*4)],dept,lane:'primary',status:0,stuck:false,points:20+5*Math.floor(random(s)*4),tag:random(s)<.3?'VIP':random(s)<.4?'Urgent':'Normal',dueDay:day,prepared:0});
@@ -71,11 +81,12 @@ export class Game {
     if(this.s.pendingStuck)return;
     if(clear&&i.stuck){i.stuck=false;i.status=1;c.moves++;c.queue.push({type:'move',item:i,actor,to:1,position:c.moves});await this.note(`${i.name} · blocker cleared`,actor,i.id);return;}
     if(i.stuck)return;
-    const preparedBoost=i.status===0?i.prepared||0:0;
+    const preparedBoost=i.status===0&&!i.preparationConsumed?i.prepared||0:0;
     if(i.status===2&&this.canResolveStuck()&&random(this.s)<this.stuckRisk(i)) {
-      i.stuck=true;this.s.pendingStuck=i.id;c.queue.push({type:'stuck',item:i,actor});
+      i.stuck=true;this.s.pendingStuck=i.id;this.s.stuckActor=actor;c.queue.push({type:'stuck',item:i,actor});
       await this.note(`${i.name} is Stuck · a quick scenario needs your call`,actor,i.id,'stuck');return;
     }
+    if(preparedBoost&&this.s.balanceVersion===2)i.preparationConsumed=true;
     i.status=Math.min(3,i.status+1+preparedBoost);
     const to=i.status;
     c.moves++;c.queue.push({type:'move',item:i,actor,to,position:c.moves});
@@ -99,7 +110,7 @@ export class Game {
         }[id];
         if(!eligible||!await this.fire(c,id,i.id))continue;
         if(id==='bonus')payout+=5;
-        if(id==='assign')await this.advance(c,i,id);
+        if(id==='assign'){const before=i.status;await this.advance(c,i,id);this.s.daily.autoAssigned=(this.s.daily.autoAssigned||0)+i.status-before;}
         if(id==='alert'){this.s.actions++;this.s.daily.alert=(this.s.daily.alert||0)+1;}
         if(id==='galley')c.score+=3;
         if(id==='room')multiplier*=1.5;
@@ -128,7 +139,10 @@ export class Game {
     this.s.day++;this.s.phase='playing';this.s.dayScore=0;this.s.daily={};this.s.actions=6+this.s.nextActions;this.s.nextActions=0;
     this.s.items=this.s.tomorrow.length?this.s.tomorrow:generate(this.s,this.s.day);
     this.s.items.forEach(i=>{i.status=0;i.stuck=false;});
+    this.s.playerTurns=0;this.s.briefingSkips=[];this.s.turn=null;
+    this.s.events=this.s.tomorrowEvents?.length?this.s.tomorrowEvents:forecast(this.s,this.s.day,this.s.items);
     this.s.tomorrow=this.s.day<10?generate(this.s,this.s.day+1):[];
+    this.s.tomorrowEvents=forecast(this.s,this.s.day+1,this.s.tomorrow);
     for(const next of this.s.tomorrow)this.s.items.push({id:`prep-${next.id}`,name:PREPS[next.dept],dept:next.dept,lane:'secondary',status:0,stuck:false,points:5,tag:'Preparation',dueDay:this.s.day,targetId:next.id,targetName:next.name});
     for(const dept of DEPTS.slice((this.s.day-1)%2,(this.s.day-1)%2+2))this.s.items.push({id:`repeat-${this.s.day}-${dept}`,name:RECURRING[dept],dept,lane:'recurring',status:0,stuck:false,points:15,tag:'Normal',dueDay:this.s.day});
     await this.note(`Day ${this.s.day} · ${BOSSES[this.s.day]?.rule||'Another beautiful day in operations.'}`,null,null,'day');
@@ -142,27 +156,58 @@ export class Game {
     await this.settle(c);return true;
   }
   async act(id) {
-    if(this.busy||this.s.phase!=='playing'||this.s.actions<1)return false;
+    if(this.busy||this.s.pendingStuck||this.s.phase!=='playing'||this.s.actions<1)return false;
     const i=this.s.items.find(i=>i.id===id);if(!i||done(i))return false;
     this.busy=true;
-    try {this.s.actions--;const c=this.context();await this.advance(c,i);await this.drain(c);
-      if(this.s.pendingStuck){await this.settle(c);return true;}
+    try {this.s.actions--;const c=this.context();if(this.s.balanceVersion===2)this.s.turn={nextAgent:0,context:c};await this.advance(c,i);await this.drain(c);
+      if(this.s.pendingStuck){if(this.s.balanceVersion!==2)await this.settle(c);return true;}
+      if(this.s.balanceVersion===2){await this.continueTurn(c);return true;}
       for(const a of this.s.agents.slice(0,TIERS[this.s.tier].agents)){const target=agentTarget(this.s,a);if(target&&await this.fire(c,`agent-action-${a.id}`,target.id)){await this.advance(c,target,a.id);await this.drain(c);if(this.s.pendingStuck)break;}}
       await this.settle(c);if(this.s.actions===0&&!this.s.pendingStuck)await this.endDay();return true;
     } finally {this.busy=false;}
   }
+  async continueTurn(c=this.context()) {
+    const turn=this.s.turn;
+    if(turn)while(turn.nextAgent<Math.min(this.s.agents.length,TIERS[this.s.tier].agents)) {
+      const a=this.s.agents[turn.nextAgent++];
+      const skip=this.s.briefingSkips.indexOf(a.id);
+      if(skip>=0){this.s.briefingSkips.splice(skip,1);await this.note(`${AGENTS.find(x=>x.id===a.id).name} · attending ${a.dept} briefing, turn skipped`,a.id,null,'agent-skip');continue;}
+      const target=agentTarget(this.s,a);
+      if(target&&await this.fire(c,`agent-action-${a.id}`,target.id)){await this.advance(c,target,a.id);await this.drain(c);}
+      if(this.s.pendingStuck)return;
+    }
+    await this.settle(c);
+    if(turn){this.s.turn=null;this.s.playerTurns++;await this.resolveDisruptions();}
+    if(this.s.actions===0&&!this.s.pendingStuck)await this.endDay();
+  }
+  async resolveDisruptions() {
+    for(const event of this.s.events||[]) {
+      if(event.resolved||event.afterTurn>this.s.playerTurns)continue;
+      event.resolved=true;
+      if(event.type==='allhands'){const cost=Math.min(1,this.s.actions);this.s.actions-=cost;await this.note(`Mandatory all-hands · −${cost} action`,event.id,null,'disruption');}
+      if(event.type==='inspection'){
+        await this.note('Health inspection · unfinished Galley work returns to Pending',event.id,null,'disruption');
+        for(const item of this.s.items.filter(i=>i.dept==='Galley'&&!done(i)&&i.status>0)){item.status=0;await this.note(`${item.name} → Pending · health inspection`,event.id,item.id,'reset');}
+      }
+      if(event.type==='briefing'){this.s.briefingSkips.push(...this.s.agents.filter(a=>a.dept===event.dept).map(a=>a.id));await this.note(`${event.dept} briefing · assigned agents skip their next turn`,event.id,null,'disruption');}
+    }
+  }
   async resolveStuck(method) {
     const i=this.s.items.find(item=>item.id===this.s.pendingStuck);
     const cost=method==='coins'?3:2;
-    if(!i||!i.stuck||!['coins','actions'].includes(method)||(method==='coins'?this.s.coins<cost:this.s.actions<cost))return false;
+    if(this.busy||!i||!i.stuck||!['coins','actions'].includes(method)||(method==='coins'?this.s.coins<cost:this.s.actions<cost))return false;
+    this.busy=true;
+    try {
     if(method==='coins')this.s.coins-=cost;else this.s.actions-=cost;
     this.s.pendingStuck=null;i.stuck=false;i.status=3;
-    const c=this.context();c.queue.push({type:'move',item:i,actor:`resolve-${method}`,to:3,position:++c.moves});c.queue.push({type:'done',item:i,actor:`resolve-${method}`});
+    const c=this.s.balanceVersion===2&&this.s.turn?.context?this.s.turn.context:this.context(),actor=this.s.balanceVersion===2?this.s.stuckActor||`resolve-${method}`:`resolve-${method}`;c.queue.push({type:'move',item:i,actor,to:3,position:++c.moves});c.queue.push({type:'done',item:i,actor});
     await this.note(`${i.name} unblocked · ${method==='coins'?'outside help was invoiced':'the team sacrificed two actions'}`,`resolve-${method}`,i.id,'resolve');
-    await this.drain(c);await this.settle(c);if(this.s.actions===0)await this.endDay();return true;
+    await this.drain(c);
+    if(this.s.balanceVersion===2){if(!this.s.pendingStuck)await this.continueTurn(c);else if(!this.s.turn)await this.settle(c);}else{await this.settle(c);if(this.s.actions===0)await this.endDay();}return true;
+    } finally {this.busy=false;}
   }
   async endDay() {
-    if(this.s.phase!=='playing'||this.s.pendingStuck)return false;
+    if(this.s.phase!=='playing'||this.s.pendingStuck||this.s.turn)return false;
     if(this.s.items.some(i=>i.lane==='primary'&&!done(i))){this.s.phase='lost';await this.note('Unfinished mandatory work. The captain requests an exit interview.');return true;}
     const reward=3+this.s.items.filter(i=>i.lane==='primary').length+Math.floor(this.s.dayScore/40);this.s.coins+=reward;
     await this.note(`Day survived · +${reward} coins`,null,null,'reward');
@@ -174,6 +219,7 @@ export class Game {
   rollOffers() {
     const pool=RULES.filter(r=>!this.s.automations.some(a=>a.id===r.id));this.s.offers=[];
     while(pool.length&&this.s.offers.length<3){const weights=pool.map(r=>r.rarity==='Common'?6:r.rarity==='Uncommon'?3:1+this.s.day*.2);let roll=random(this.s)*weights.reduce((a,b)=>a+b,0);let index=weights.length-1;for(let n=0;n<weights.length;n++){roll-=weights[n];if(roll<0){index=n;break;}}this.s.offers.push(pool.splice(index,1)[0].id);}
+    if(this.s.balanceVersion===2&&!this.s.offers.some(id=>THROUGHPUT.includes(id))){const choices=THROUGHPUT.filter(id=>!this.s.automations.some(a=>a.id===id));if(choices.length)this.s.offers[Math.min(2,this.s.offers.length)]=choices[Math.floor(random(this.s)*choices.length)];}
   }
   upgrade() {if(this.s.phase!=='shop')return false;const next=this.s.tier==='basic'?'pro':this.s.tier==='pro'?'enterprise':null;if(!next||this.s.coins<TIERS[next].cost)return false;this.s.coins-=TIERS[next].cost;this.s.tier=next;return true;}
   buy(id) {const r=RULES.find(r=>r.id===id);if(this.s.phase!=='shop'||!r||!this.s.offers.includes(id)||this.s.coins<r.cost||this.s.automations.some(a=>a.id===id))return false;this.s.coins-=r.cost;this.s.automations.push({id,enabled:activeRules(this.s).length<TIERS[this.s.tier].automations});this.s.offers=this.s.offers.filter(x=>x!==id);return true;}
