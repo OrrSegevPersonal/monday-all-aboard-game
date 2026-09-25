@@ -64,7 +64,7 @@ export class Game {
     if(id!=='chain'&&!c.chain&&c.effects>=3&&activeRules(this.s).includes('chain')) {c.chain=true;await this.note('Chain Reaction · all cascade score ×2','chain',target,'multiplier');}
     return true;
   }
-  stuckRisk(i) { return i.stuckRisk ?? (i.tag==='Urgent'?.3:i.tag==='VIP'?.2:i.lane==='secondary'?.1:.15); }
+  stuckRisk(i) { return i.stuckRisk ?? (i.tag==='Urgent'?.2:i.tag==='VIP'?.15:i.lane==='secondary'?.08:.1); }
   canResolveStuck() { return this.s.coins>=3||this.s.actions>=2; }
   async advance(c,i,actor='player',clear=false) {
     if(!i||done(i)||c.halted)return;
