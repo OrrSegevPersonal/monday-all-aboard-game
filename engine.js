@@ -33,11 +33,11 @@ const NAMES = {
 const PREPS = {Galley:'Prep the ingredients',Cabins:'Stock the service trolley','Engine Room':'Stage the spare parts',Deck:'Check the lights and sound'};
 const RECURRING = {Galley:'Polish the suspicious spoons',Cabins:'Refold the towel swans','Engine Room':'Label the mystery switches',Deck:'Mediate deck-chair diplomacy'};
 export function createState(seed=Date.now()) {
-  return {version:1,seed:Number(seed)>>>0,rng:Number(seed)>>>0,day:0,phase:'new',tier:'basic',coins:0,actions:0,dayScore:0,totalScore:0,nextActions:0,items:[],tomorrow:[],automations:[{id:'assign',enabled:true}],agents:[],daily:{},log:[],offers:[],rerolls:0,serial:0};
+  return {version:2,seed:Number(seed)>>>0,rng:Number(seed)>>>0,day:0,phase:'new',tier:'basic',coins:0,actions:0,dayScore:0,totalScore:0,nextActions:0,items:[],tomorrow:[],automations:[{id:'assign',enabled:true}],agents:[],daily:{},log:[],offers:[],rerolls:0,serial:0,pendingStuck:null};
 }
 export function random(s) { s.rng=(s.rng+0x6D2B79F5)>>>0; let t=s.rng; t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296; }
 export const done = i => i.status===3;
-export function status(i) { return i.stuck?'Stuck':i.lane==='secondary'?(done(i)?'Done':'Ready to prepare'):['Not started','Working on it','Review','Done'][i.status]; }
+export function status(i) { return i.stuck?'Stuck':['Pending','Working on it','In review','Done'][i.status]; }
 export function activeRules(s) { return s.automations.filter(a=>a.enabled).slice(0,TIERS[s.tier].automations).map(a=>a.id); }
 export function agentTarget(s,a) {
   return s.items.filter(i=>i.dept===a.dept&&!done(i)).sort((x,y)=>['primary','secondary','recurring'].indexOf(x.lane)-['primary','secondary','recurring'].indexOf(y.lane)||y.status-x.status||s.items.indexOf(x)-s.items.indexOf(y))[0];
@@ -48,7 +48,7 @@ function generate(s,day) {
     const dept=DEPTS[(day+n-1)%4];
     result.push({id:`task-${++s.serial}`,name:NAMES[dept][Math.floor(random(s)*4)],dept,lane:'primary',status:0,stuck:false,points:20+5*Math.floor(random(s)*4),tag:random(s)<.3?'VIP':random(s)<.4?'Urgent':'Normal',dueDay:day,prepared:0});
   }
-  if(boss) result[count-1]={...result[count-1],name:boss.name,dept:boss.dept,boss:true,stuck:true,points:45};
+  if(boss) result[count-1]={...result[count-1],name:boss.name,dept:boss.dept,boss:true,stuck:false,stuckRisk:.55,points:45};
   return result;
 }
 export class Game {
@@ -64,13 +64,20 @@ export class Game {
     if(id!=='chain'&&!c.chain&&c.effects>=3&&activeRules(this.s).includes('chain')) {c.chain=true;await this.note('Chain Reaction · all cascade score ×2','chain',target,'multiplier');}
     return true;
   }
+  stuckRisk(i) { return i.stuckRisk ?? (i.tag==='Urgent'?.3:i.tag==='VIP'?.2:i.lane==='secondary'?.1:.15); }
+  canResolveStuck() { return this.s.coins>=3||this.s.actions>=2; }
   async advance(c,i,actor='player',clear=false) {
     if(!i||done(i)||c.halted)return;
-    if(i.stuck){i.stuck=false;i.status=1;await this.note(`${i.name} · blocker cleared`,actor,i.id);c.queue.push({type:'move',item:i,actor,to:1});c.moves++;return;}
+    if(i.stuck||this.s.pendingStuck)return;
     if(clear)return;
-    i.status=i.lane==='secondary'?3:Math.min(3,i.status+1);
+    const preparedBoost=i.status===0?i.prepared||0:0;
+    if(i.status===2&&this.canResolveStuck()&&random(this.s)<this.stuckRisk(i)) {
+      i.stuck=true;this.s.pendingStuck=i.id;c.queue.push({type:'stuck',item:i,actor});
+      await this.note(`${i.name} is Stuck · a quick scenario needs your call`,actor,i.id,'stuck');return;
+    }
+    i.status=Math.min(3,i.status+1+preparedBoost);
     const to=i.status;
-    if(i.lane!=='secondary') {c.moves++;c.queue.push({type:'move',item:i,actor,to,position:c.moves});}
+    c.moves++;c.queue.push({type:'move',item:i,actor,to,position:c.moves});
     await this.note(`${i.name} → ${status(i)}`,actor,i.id,'advance');
     if(done(i))c.queue.push({type:'done',item:i,actor});
   }
@@ -119,13 +126,13 @@ export class Game {
     if(!['new','shop'].includes(this.s.phase))return false;
     this.s.day++;this.s.phase='playing';this.s.dayScore=0;this.s.daily={};this.s.actions=6+this.s.nextActions;this.s.nextActions=0;
     this.s.items=this.s.tomorrow.length?this.s.tomorrow:generate(this.s,this.s.day);
-    this.s.items.forEach(i=>{i.status=Math.min(2,i.prepared);if(i.prepared>0)i.stuck=false;});
+    this.s.items.forEach(i=>{i.status=0;i.stuck=false;});
     this.s.tomorrow=this.s.day<10?generate(this.s,this.s.day+1):[];
     for(const next of this.s.tomorrow)this.s.items.push({id:`prep-${next.id}`,name:PREPS[next.dept],dept:next.dept,lane:'secondary',status:0,stuck:false,points:5,tag:'Preparation',dueDay:this.s.day,targetId:next.id,targetName:next.name});
-    for(const dept of DEPTS.slice((this.s.day-1)%2,(this.s.day-1)%2+2))this.s.items.push({id:`repeat-${this.s.day}-${dept}`,name:RECURRING[dept],dept,lane:'recurring',status:1,stuck:false,points:15,tag:'Normal',dueDay:this.s.day});
+    for(const dept of DEPTS.slice((this.s.day-1)%2,(this.s.day-1)%2+2))this.s.items.push({id:`repeat-${this.s.day}-${dept}`,name:RECURRING[dept],dept,lane:'recurring',status:0,stuck:false,points:15,tag:'Normal',dueDay:this.s.day});
     await this.note(`Day ${this.s.day} · ${BOSSES[this.s.day]?.rule||'Another beautiful day in operations.'}`,null,null,'day');
     const c=this.context();
-    for(const i of this.s.items.filter(i=>i.lane==='primary')){c.queue.push({type:'arrival',item:i});if(i.stuck)c.queue.push({type:'stuck',item:i});}
+    for(const i of this.s.items.filter(i=>i.lane==='primary'))c.queue.push({type:'arrival',item:i});
     await this.drain(c);
     for(const id of activeRules(this.s)) {
       if(id==='standup') {const pool=this.s.items.filter(i=>i.lane!=='secondary'&&!done(i));for(let n=0;n<2&&pool.length;n++){const i=pool.splice(Math.floor(random(this.s)*pool.length),1)[0];if(await this.fire(c,id,i.id)){await this.advance(c,i,id);await this.drain(c);}}}
@@ -138,9 +145,20 @@ export class Game {
     const i=this.s.items.find(i=>i.id===id);if(!i||done(i))return false;
     this.busy=true;
     try {this.s.actions--;const c=this.context();await this.advance(c,i);await this.drain(c);
-      for(const a of this.s.agents.slice(0,TIERS[this.s.tier].agents)){const target=agentTarget(this.s,a);if(target&&await this.fire(c,`agent-action-${a.id}`,target.id)){await this.advance(c,target,a.id);await this.drain(c);}}
+      if(this.s.pendingStuck){await this.settle(c);return true;}
+      for(const a of this.s.agents.slice(0,TIERS[this.s.tier].agents)){const target=agentTarget(this.s,a);if(target&&await this.fire(c,`agent-action-${a.id}`,target.id)){await this.advance(c,target,a.id);await this.drain(c);if(this.s.pendingStuck)break;}}
       await this.settle(c);if(this.s.actions===0)await this.endDay();return true;
     } finally {this.busy=false;}
+  }
+  async resolveStuck(method) {
+    const i=this.s.items.find(item=>item.id===this.s.pendingStuck);
+    const cost=method==='coins'?3:2;
+    if(!i||!i.stuck||!['coins','actions'].includes(method)||(method==='coins'?this.s.coins<cost:this.s.actions<cost))return false;
+    if(method==='coins')this.s.coins-=cost;else this.s.actions-=cost;
+    this.s.pendingStuck=null;i.stuck=false;i.status=3;
+    const c=this.context();c.queue.push({type:'move',item:i,actor:`resolve-${method}`,to:3,position:++c.moves});c.queue.push({type:'done',item:i,actor:`resolve-${method}`});
+    await this.note(`${i.name} unblocked · ${method==='coins'?'outside help was invoiced':'the team sacrificed two actions'}`,`resolve-${method}`,i.id,'resolve');
+    await this.drain(c);await this.settle(c);if(this.s.actions===0)await this.endDay();return true;
   }
   async endDay() {
     if(this.s.phase!=='playing')return false;
