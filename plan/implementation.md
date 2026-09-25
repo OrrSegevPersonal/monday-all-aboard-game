@@ -78,12 +78,12 @@ The curve and simulation evidence are recorded in `balance-validation.md`. After
 | Momentum | Score each status advance by its one-based cascade position. | Uncommon / 5 |
 | Overtime | Pay 2 coins at day end for 2 actions tomorrow, if affordable. | Uncommon / 5 |
 | VIP Lounge | VIP Primary/Recurring completion payout ×2. | Uncommon / 5 |
-| Clear Blockers | Choose one Stuck order to clear at day start. | Uncommon / 5 |
+| Clear Blockers | When work becomes Stuck, clear one blocker back to Working once/day. | Uncommon / 5 |
 | Chain Reaction | Three triggered effects double all cascade score, once/action. | Rare / 8 |
 | Crossover | Deck Primary/Recurring completion advances a chosen Galley Primary/Recurring order. | Rare / 8 |
-| Touch Base | Entering Review sends an order back to Working and grants 10 score, three times/action. | Rare / 8 |
+| Touch Base | Entering Review sends an order back to Working once per task/day and grants 10 score. | Rare / 8 |
 
-Completion multipliers include completion bonuses from rules and agents, multiply together, and precede Chain Reaction. Cascade totals round to integer score once, after multipliers. Secondary completion generates its normal final status-advance event, then records its linked preparation. Clear Stuck returns a status-bearing order to Working and emits an advance event. Every automation may fire at most five times per cascade (Touch Base three); the global budget is 50 effects. Morning events form a separate cascade. Agent turns do not recursively schedule more agent turns.
+Completion multipliers include completion bonuses from rules and agents, multiply together, and precede Chain Reaction. Cascade totals round to integer score once, after multipliers. Secondary completion generates its normal final status-advance event, then records its linked preparation and exact carry-over status on tomorrow's Primary. Clear Stuck returns a status-bearing order to Working and emits an advance event. Every automation may fire at most five times per cascade; the global budget is 50 effects. Morning events form a separate cascade. Agent turns do not recursively schedule more agent turns. Completing the day-6 Boss Task grants 4 upgrade-credit coins.
 
 ## Agent roster
 

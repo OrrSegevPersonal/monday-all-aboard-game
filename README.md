@@ -20,13 +20,15 @@ npm test
 
 - Click a task’s status to spend one daily action. Every lane uses the same track: Pending → Working on it → In review → Done. Complete every Primary before the day ends; unfinished mandatory work ends the run.
 - Some reviews become Stuck. The incident window offers a task-specific forward route: pay 3 coins for outside help or spend 2 actions to handle it in-house. Either route completes the work.
-- Secondary preparations follow that same status track. Completing one removes a step from its named tomorrow Primary's first advance. Recurring tasks offer optional score.
+- Secondary preparations follow that same status track. Completing one carries the exact saved status into its named tomorrow Primary, shown as a “Prepared carry-over” badge; it never jumps the task to Done. Recurring tasks offer optional score.
 - The starter Auto-assign moves arriving Primaries forward. Equip additional rules at port and watch their effects cascade.
 - New cruises escalate from 2 to 10 mandatory Primaries: `2, 2, 3, 3, 4, 5, 6, 7, 9, 10`. Manual-only and starter-only play cannot carry the full cruise. Build throughput and assign agents using tomorrow’s department forecast.
 - Disruptions begin on day 4. All-hands consumes an action, inspections reset unfinished Galley work to Pending, and departmental briefings skip matching agents’ next turns. Forecasts at port give exact timing; completing work before an inspection protects it. End a completed day early to avoid later events.
 - Successful days pay 3 coins + 1 per Primary + 1 per 40 daily score. Buy Pro for 8 coins, then Enterprise for another 16. These reduced prices also apply to future purchases in existing saves; earlier purchases are not refunded.
 - Agents cost 5 coins to hire and 1 coin per successful day. Assign their department in the crew view while at port. Each acts once after every player action.
 - Complete ten days to win. Boss Tasks arrive on days 3, 6, and 9. Use a numeric seed in New cruise to repeat a run’s content; identical decisions reproduce its randomness.
+
+The board can be grouped by ETA (Primary, preparation, or recurring lane) or by department using the Group by filter in the toolbar. Status buttons expose their next step on hover, and game-over diagnostics include remaining steps and recent disruption history.
 
 Runs save locally after each completed action, day transition, or shop change. Refresh resumes the last settled state, including the RNG position. The save is local to this browser and origin; no account or backend is required. Animation speed can be changed in the footer; system reduced-motion preferences are respected.
 

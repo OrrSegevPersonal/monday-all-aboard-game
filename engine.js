@@ -21,10 +21,10 @@ export const RULES = [
   ['momentum','Momentum','When work advances → gain score equal to its position in this cascade.','Uncommon',5],
   ['overtime','Overtime','When the day ends → pay 2 coins for 2 extra actions tomorrow.','Uncommon',5],
   ['vip','VIP Lounge','When VIP work completes → double its full payout.','Uncommon',5],
-  ['clear','Clear Blockers','When the day starts → choose one Stuck work order to clear.','Uncommon',5],
+  ['clear','Clear Blockers','When work becomes Stuck → clear it back to Working once per day.','Uncommon',5],
   ['chain','Chain Reaction','When three effects trigger → double this entire action’s score.','Rare',8],
   ['cross','Crossover','When Deck work completes → advance one chosen Galley work order.','Rare',8],
-  ['touch','Touch Base','When work enters Review → send it back and gain 10 score. Three times per action.','Rare',8],
+  ['touch','Touch Base','When work enters Review → send it back once per task per day and gain 10 score.','Rare',8],
 ].map(([id,name,text,rarity,cost])=>({id,name,text,rarity,cost}));
 export const AGENTS = [
   {id:'coordinator',name:'The Coordinator',perk:'+3 score when this agent completes a preparation.',portrait:0},
@@ -97,7 +97,7 @@ export class Game {
     while(c.queue.length&&!c.halted) {
       const e=c.queue.shift(),i=e.item;
       if(e.type==='done'&&i.lane==='secondary') {
-        const next=this.s.tomorrow.find(t=>t.id===i.targetId);if(next){next.prepared++;await this.note(`Prepared for tomorrow: ${next.name}`,null,i.id);}
+        const next=this.s.tomorrow.find(t=>t.id===i.targetId);if(next){next.prepared=Math.min(2,(next.prepared||0)+1);next.preparedStatus=Math.min(2,next.prepared);await this.note(`Prepared carry-over: ${next.name} starts at ${['Pending','Working on it','In review'][next.preparedStatus]}`,null,i.id);}
       }
       let payout=e.type==='done'?i.points:0,multiplier=1;
       for(const id of activeRules(this.s)) {
@@ -106,7 +106,8 @@ export class Game {
           galley:e.type==='move'&&i.dept==='Galley',room:e.type==='done'&&i.lane!=='secondary'&&i.dept==='Cabins',fast:e.type==='done'&&i.lane!=='secondary'&&i.tag==='Urgent',
           momentum:e.type==='move',vip:e.type==='done'&&i.lane!=='secondary'&&i.tag==='VIP',
           cross:e.type==='done'&&i.lane!=='secondary'&&i.dept==='Deck'&&this.s.items.some(t=>t.dept==='Galley'&&t.lane!=='secondary'&&!done(t)),
-          touch:e.type==='move'&&e.to===2&&i.status===2,
+          touch:e.type==='move'&&e.to===2&&i.status===2&&!this.s.daily[`touch-${i.id}`],
+          clear:e.type==='stuck'&&!this.s.daily.clear,
         }[id];
         if(!eligible||!await this.fire(c,id,i.id))continue;
         if(id==='bonus')payout+=5;
@@ -118,6 +119,8 @@ export class Game {
         if(id==='momentum')c.score+=e.position||c.moves;
         if(id==='vip')multiplier*=2;
         if(id==='touch'){i.status=1;c.score+=10;await this.note(`${i.name} · let’s Touch Base again`,id,i.id,'rewind');}
+        if(id==='touch')this.s.daily[`touch-${i.id}`]=true;
+        if(id==='clear'){i.stuck=false;this.s.pendingStuck=null;this.s.daily.clear=true;i.status=1;c.queue.push({type:'move',item:i,actor:id,to:1,position:++c.moves});await this.note(`${i.name} · blocker cleared by Clear Blockers`,id,i.id,'clear');}
         if(id==='cross') {const pool=this.s.items.filter(t=>t.dept==='Galley'&&t.lane!=='secondary'&&!done(t));const selected=await this.choose('Crossover · choose Galley work to advance',pool);await this.advance(c,pool.find(t=>t.id===selected)||pool[0],id);}
       }
       for(const a of this.s.agents) {
@@ -138,7 +141,7 @@ export class Game {
     if(!['new','shop'].includes(this.s.phase))return false;
     this.s.day++;this.s.phase='playing';this.s.dayScore=0;this.s.daily={};this.s.actions=6+this.s.nextActions;this.s.nextActions=0;
     this.s.items=this.s.tomorrow.length?this.s.tomorrow:generate(this.s,this.s.day);
-    this.s.items.forEach(i=>{i.status=0;i.stuck=false;});
+    this.s.items.forEach(i=>{i.status=i.preparedStatus||0;i.preparationConsumed=Boolean(i.preparedStatus);i.stuck=false;});
     this.s.playerTurns=0;this.s.briefingSkips=[];this.s.turn=null;
     this.s.events=this.s.tomorrowEvents?.length?this.s.tomorrowEvents:forecast(this.s,this.s.day,this.s.items);
     this.s.tomorrow=this.s.day<10?generate(this.s,this.s.day+1):[];
@@ -151,7 +154,6 @@ export class Game {
     await this.drain(c);
     for(const id of activeRules(this.s)) {
       if(id==='standup') {const pool=this.s.items.filter(i=>i.lane!=='secondary'&&!done(i));for(let n=0;n<2&&pool.length;n++){const i=pool.splice(Math.floor(random(this.s)*pool.length),1)[0];if(await this.fire(c,id,i.id)){await this.advance(c,i,id);await this.drain(c);}}}
-      if(id==='clear') {const pool=this.s.items.filter(i=>i.stuck&&!done(i));if(pool.length){const choice=await this.choose('Clear Blockers · choose one work order',pool);const i=pool.find(i=>i.id===choice)||pool[0];if(await this.fire(c,id,i.id)){await this.advance(c,i,id,true);await this.drain(c);}}}
     }
     await this.settle(c);return true;
   }
@@ -211,6 +213,7 @@ export class Game {
     if(this.s.items.some(i=>i.lane==='primary'&&!done(i))){this.s.phase='lost';await this.note('Unfinished mandatory work. The captain requests an exit interview.');return true;}
     const reward=3+this.s.items.filter(i=>i.lane==='primary').length+Math.floor(this.s.dayScore/40);this.s.coins+=reward;
     await this.note(`Day survived · +${reward} coins`,null,null,'reward');
+    if(this.s.day===6&&this.s.items.some(i=>i.boss&&done(i))){this.s.coins+=4;await this.note('Boss Task mastered · +4 upgrade credit',null,null,'reward');}
     const retained=[];for(const a of this.s.agents){if(this.s.coins>=1){this.s.coins--;retained.push(a);}else await this.note(`${AGENTS.find(x=>x.id===a.id).name} quit: unpaid upkeep.`);}this.s.agents=retained;
     if(this.s.day>=10){this.s.phase='won';await this.note('Cruise complete. Everyone survived the meeting.');return true;}
     if(activeRules(this.s).includes('overtime')&&this.s.coins>=2){this.s.coins-=2;this.s.nextActions=2;await this.note('Overtime booked · −2 coins, +2 actions tomorrow','overtime');}
