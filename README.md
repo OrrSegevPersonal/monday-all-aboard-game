@@ -1,0 +1,40 @@
+# All A Board!
+
+A ten-day cruise operations game, played on a Monday-inspired work board. Browser-native JavaScript, with a deterministic rules engine and no install-time dependencies.
+
+## Run
+
+Requires Node.js 20 or later.
+
+```sh
+npm run dev
+```
+
+Open http://localhost:5173. `PORT=5174 npm run dev` selects another port. The server binds to localhost only.
+
+```sh
+npm test
+```
+
+## Play
+
+- Click a task’s status to spend one of six daily actions. Complete every Primary before the day ends. You can end a day early; unfinished mandatory work ends the run.
+- Secondary tasks take one action and remove a status step from their named tomorrow Primary. Recurring tasks offer optional score.
+- The starter Auto-assign moves arriving Primaries forward. Equip additional rules at port and watch their effects cascade.
+- Successful days pay 3 coins + 1 per Primary + 1 per 40 daily score. Buy Pro for 12 coins, then Enterprise for another 24.
+- Agents cost 5 coins to hire and 1 coin per successful day. Assign their department in the crew view while at port. Each acts once after every player action.
+- Complete ten days to win. Bosses arrive on days 3, 6, and 9. Use a numeric seed in New cruise to repeat a run’s content; identical decisions reproduce its randomness.
+
+Runs save locally after each completed action, day transition, or shop change. Refresh resumes the last settled state, including the RNG position. The save is local to this browser and origin; no account or backend is required. Animation speed can be changed in the footer; system reduced-motion preferences are respected.
+
+## Structure
+
+- `engine.js`: seeded content, rules, agent targeting, event resolution, economy, progression.
+- `app.js`: board, automation management, shop, crew roster, target-choice dialogs, local persistence, animated event presentation.
+- `style.css`: responsive reference-inspired visual system. The table scrolls horizontally on narrow screens.
+- `test/engine.test.js`: rule and economy regression tests, including 100 seeded full-run simulations.
+- `plan/implementation.md`: implemented design and explicit resolution rules. The original brainstorming spec remains in `plan/game-spec.md`.
+
+Agent portraits use the supplied individual images and cropped portions of the supplied roster image. The ship reference informs copy and colors only. DM Sans is loaded when Google Fonts is available, with a local sans-serif fallback.
+
+This implementation ends at the ten-day victory screen. Online leaderboards, accounts, and endless mode are not part of this implementation plan. Balance values are initial tuning, not conclusions from human playtesting.
